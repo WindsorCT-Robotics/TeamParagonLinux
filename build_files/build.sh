@@ -24,9 +24,10 @@ VSCODE_EXTENSIONS=(
     "PKief.material-icon-theme"
 )
 
-# Install FRC and WPILib for robotics development
-
-echo "=== Installing WPILib Extensions into System Layer ==="
+# -------------------------------------------------------------
+# 1. DEPLOY THE EMBEDDED JDK & MAVEN DEPENDENCIES
+# -------------------------------------------------------------
+echo "=== Installing WPILib Software into System Layer ==="
 mkdir -p ${WPILIB_INSTALL_DIR}
 cd ${WPILIB_DIR}
 
@@ -46,6 +47,44 @@ EOF
 
 # Source the profile to make the environment variables available in this script
 source /etc/profile.d/wpilib.sh
+
+# -------------------------------------------------------------
+# 2. Install VendorDeps to expected location
+# -------------------------------------------------------------
+echo "--- Copy vendordeps to system location ---"
+mv vendordeps ${WPILIB_INSTALL_DIR}/vendordeps
+
+# FRC VS Code looks for vendordeps in the project structure, but we seed the image
+# so new user profiles have the shared schemas pre-populated.
+mkdir -p /etc/skel/wpilib/2027/vendordeps
+cp "${WPILIB_SYSTEM_DIR}/vendordeps/"* /etc/skel/wpilib/2027/vendordeps/
+
+# -------------------------------------------------------------
+# 3. RUN TOOLSUPDATER (Extract Glass, SysId, OutlineViewer)
+# -------------------------------------------------------------
+echo "--- Installing WPILib Tools ---"
+cd ${WPILIB_DIR}/tools
+./ToolsUpdater
+
+mv datadogtool glass outlineviewer sysid wpical /usr/local/wpilib/2027/tools 
+
+cd ${WPILIB_DIR}
+
+# -------------------------------------------------------------
+# 4. DEPLOY ADVANCED UTILITIES & VSCODE EXTENSIONS
+# -------------------------------------------------------------
+echo "--- Deploying WPILib Advanced Utilities ---"
+
+mv advantagescope elastic systemcore ${WPILIB_INSTALL_DIR}
+
+ln -s ${WPILIB_INSTALL_DIR}/advantagescope/advantagescope-wpilib /usr/local/bin/advantagescope-wpilib
+ln -s ${WPILIB_INSTALL_DIR}/elastic/elastic_dashboard /usr/local/bin/elastic_dashboard
+
+echo "--- Installing WPILib VSCode Extension ---"
+
+mkdir -p /usr/share/code/extensions
+find vsCodeExtensions/ -name "*.vsix" -exec \
+  code --user-data-dir=/tmp/vscode-root --extensions-dir=/usr/share/code/extensions --install-extension {} \;
 
 echo "=== Installing other VSCode Extensions into System Layer ==="
 

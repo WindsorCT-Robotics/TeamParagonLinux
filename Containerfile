@@ -5,6 +5,7 @@ COPY system_files /system_files
 
 # Base Image
 FROM ghcr.io/ublue-os/aurora-dx:latest
+
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:testing
 # FROM ghcr.io/ublue-os/aurora:stable
